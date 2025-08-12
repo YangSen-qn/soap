@@ -58,7 +58,7 @@ type Client struct {
 	url         string
 	tls         bool
 	auth        *BasicAuth
-	tr          *http.Transport
+	client      *http.Client
 	Marshaller  XMLMarshaller
 	ContentType string
 	SoapVersion string
@@ -66,10 +66,21 @@ type Client struct {
 
 // NewClient constructor. SOAP 1.1 is used by default. Switch to SOAP 1.2 with UseSoap12()
 func NewClient(url string, auth *BasicAuth, tr *http.Transport) *Client {
+	if tr != nil {
+		return NewClientWithClient(url, auth, &http.Client{Transport: tr})
+	}
+	return NewClientWithClient(url, auth, http.DefaultClient)
+}
+
+func NewClientWithClient(url string, auth *BasicAuth, c *http.Client) *Client {
+	if c == nil {
+		c = http.DefaultClient
+	}
+
 	return &Client{
 		url:         url,
 		auth:        auth,
-		tr:          tr,
+		client:      c,
 		Marshaller:  newDefaultMarshaller(),
 		ContentType: SoapContentType11, // default is SOAP 1.1
 		SoapVersion: SoapVersion11,
@@ -123,11 +134,8 @@ func (c *Client) Call(soapAction string, request, response interface{}) (httpRes
 	}
 
 	req.Close = true
-	tr := c.tr
-	if tr == nil {
-		tr = http.DefaultTransport.(*http.Transport)
-	}
-	client := &http.Client{Transport: tr}
+
+	client := c.client
 	l("POST to", c.url, "with\n", string(xmlBytes))
 	l("Header")
 	LogJSON(req.Header)
