@@ -1,40 +1,30 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
 	"net/http"
 
-	"github.com/foomo/soap"
+	"github.com/YangSen-qn/soap"
+	"github.com/YangSen-qn/soap/examples"
 )
-
-// FooRequest a simple request
-type FooRequest struct {
-	XMLName xml.Name `xml:"fooRequest"`
-	Foo     string
-}
-
-// FooResponse a simple response
-type FooResponse struct {
-	Bar string
-}
 
 // RunServer run a little demo server
 func RunServer() {
 	soapServer := soap.NewServer()
-	soapServer.HandleOperation(
+	soapServer.RegisterHandler(
 		// SOAPAction
-		"operationFoo",
+		"/",
 		// tagname of soap body content
-		"fooRequest",
+		"operationFoo",
 		// RequestFactoryFunc - give the server sth. to unmarshal the request into
+		"fooRequest",
 		func() interface{} {
-			return &FooRequest{}
+			return &examples.FooRequest{}
 		},
 		// OperationHandlerFunc - do something
 		func(request interface{}, w http.ResponseWriter, httpRequest *http.Request) (response interface{}, err error) {
-			fooRequest := request.(*FooRequest)
-			fooResponse := &FooResponse{
+			fooRequest := request.(*examples.FooRequest)
+			fooResponse := &examples.FooResponse{
 				Bar: "Hello \"" + fooRequest.Foo + "\"",
 			}
 			response = fooResponse
